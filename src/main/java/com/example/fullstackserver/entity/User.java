@@ -30,8 +30,9 @@ public class User {
     private String gender;
     private String phoneNumber;
 
-    @Enumerated(EnumType.STRING) // which will use the enum value in role file
+    @Enumerated(EnumType.STRING) 
     private Role role;
 
     private String image;
+    private String provider; 
 }

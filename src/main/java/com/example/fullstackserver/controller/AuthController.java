@@ -5,11 +5,13 @@ import com.example.fullstackserver.entity.Role;
 
 import com.example.fullstackserver.repository.UserRepository;
 import com.example.fullstackserver.security.JwtUtil;
-
+import com.example.fullstackserver.dto.ForgotPasswordRequest;
 import com.example.fullstackserver.dto.LoginRequest;
 import com.example.fullstackserver.dto.RegisterRequest;
+import com.example.fullstackserver.dto.ResetPasswordRequest;
 import com.example.fullstackserver.dto.RefreshTokenRequest;
 import com.example.fullstackserver.dto.RefreshTokenResponse;
+import com.example.fullstackserver.services.PasswordResetService;
 import com.example.fullstackserver.services.RefreshTokenService;
 import com.example.fullstackserver.entity.RefreshToken;
 import com.example.fullstackserver.dto.LogoutRequest;
@@ -30,6 +32,12 @@ public class AuthController {
 
     @Autowired
     private RefreshTokenService refreshTokenService;
+
+    @Autowired
+    private PasswordResetService passwordResetService;
+
+
+    
 
     // login 
     @PostMapping("/login")
@@ -74,8 +82,8 @@ public class AuthController {
     return ResponseEntity.ok("User registered successfully!");
 }
 
-//refresh token
-@PostMapping("/refresh")
+    //refresh token
+    @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest request) {
         String requestRefreshToken = request.getRefreshToken();
 
@@ -90,7 +98,20 @@ public class AuthController {
 
     }
     
-    @PostMapping("/logout")
+    // forgot password
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        passwordResetService.createPasswordResetToken(request.getEmail());
+        return ResponseEntity.ok("Password reset token sent to your email");
+    }
+    // reset password
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok("Password reset successful");
+    }
+    // logout
+     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestBody LogoutRequest logoutRequest) {
     String refreshTokenStr = logoutRequest.getRefreshToken();
 
@@ -103,7 +124,5 @@ public class AuthController {
 
     return ResponseEntity.ok("Logout successful. Refresh token deleted.");  
     }
-
-
-
 }
+

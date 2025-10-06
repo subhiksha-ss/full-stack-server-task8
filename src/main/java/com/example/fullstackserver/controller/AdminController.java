@@ -39,7 +39,14 @@ public class AdminController {
 
         try{
             User UpdateUser = userServices.updateUserRole(id, user);
-            return ResponseEntity.ok(new RegisterResponse(UpdateUser.getFirstName(),UpdateUser.getLastName(),UpdateUser.getEmail(),UpdateUser.getPassword(),UpdateUser.getDob(),UpdateUser.getGender(),UpdateUser.getPhoneNumber(),UpdateUser.getRole().name()));
+            return ResponseEntity.ok(new RegisterResponse(
+                UpdateUser.getFirstName(),
+                UpdateUser.getLastName(),
+                UpdateUser.getEmail(),
+                UpdateUser.getPassword(),
+                UpdateUser.getDob(),
+                UpdateUser.getGender(),
+                UpdateUser.getPhoneNumber(),UpdateUser.getRole().name()));
 
         }
         catch(RuntimeException e){
@@ -48,4 +55,5 @@ public class AdminController {
         }
 
     }
+
 }

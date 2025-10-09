@@ -23,21 +23,25 @@ public class RefreshTokenService {
     @Autowired
     private UserRepository userRepository;
 
-    private final long accessTokenExpiry = 15 * 60 * 1000;       // 15 minutes in ms
+    private final long accessTokenExpiry = 15 * 60 * 1000;       
     private final long refreshTokenExpiry = 7 * 24 * 60 * 60 * 1000; 
     
     // creating refresh token and savint it to database 
     public RefreshToken createRefreshToken(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
 
-        RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setUser(user);
-        refreshToken.setToken(UUID.randomUUID().toString());
-        refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenExpiry));
+    refreshTokenRepository.deleteByUserId(userId);
 
-        return refreshTokenRepository.save(refreshToken);
-    }
+    RefreshToken refreshToken = new RefreshToken();
+    refreshToken.setUser(user);
+    refreshToken.setToken(UUID.randomUUID().toString());
+    refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenExpiry));
+    refreshToken.setRevoked(false);
+
+    return refreshTokenRepository.save(refreshToken);
+}
+
 
     public Optional<RefreshToken> findByToken(String token) {
         return refreshTokenRepository.findByToken(token);

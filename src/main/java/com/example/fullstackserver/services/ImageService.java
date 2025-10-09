@@ -19,8 +19,8 @@ public class ImageService {
 
     @Autowired
     private Cloudinary cloudinary;
-    // file size setting -500mb
-    private static final long MAX_FILE_SIZE = 500L * 1024 * 1024; 
+
+    private static final long MAX_FILE_SIZE = 500L * 1024 * 1024; // 500 MB
 
     public User uploadProfileImageByEmail(String email, MultipartFile file) {
     User user = userRepository.findByEmail(email)
@@ -54,7 +54,7 @@ private User uploadProfileImage(User user, MultipartFile file) {
     }
 }
 
-    // uploaded type of file validation 
+    // validate file type uploaded 
     private boolean isValidFileType(String contentType) {
         return contentType != null && (
                 contentType.equals("image/jpeg") ||

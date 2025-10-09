@@ -20,12 +20,16 @@ public class RefreshToken {
     @Column(nullable = false, unique = true)
     private String token;
 
-    @OneToOne // one to one relation which means each user will have a separate token 
+    @ManyToOne // one to one relation which means each user will have a separate token 
     @JoinColumn(name = "user_id", referencedColumnName = "id") // used to refer table name from user table ID 
     private User user;
 
     @Column(nullable = false)
     private Instant expiryDate;
+    
+    @Column(nullable = false)
+    private boolean revoked = false;
+
 
     
 }

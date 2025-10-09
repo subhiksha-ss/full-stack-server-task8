@@ -19,7 +19,7 @@ public class EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(htmlBody, true); // true = HTML
+            helper.setText(htmlBody, true); 
 
             mailSender.send(message);
         } catch (MessagingException e) {

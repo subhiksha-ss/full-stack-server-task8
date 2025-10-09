@@ -1,10 +1,6 @@
 package com.example.fullstackserver.services;
-
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.stereotype.Service;
-
-
 // import com.example.fullstackserver.services.CloudinaryService;
 import com.example.fullstackserver.repository.UserRepository;
 import com.example.fullstackserver.entity.User;

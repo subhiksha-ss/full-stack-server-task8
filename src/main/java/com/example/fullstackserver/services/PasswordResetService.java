@@ -5,8 +5,10 @@ import com.example.fullstackserver.entity.User;
 import com.example.fullstackserver.repository.PasswordResetTokenRepository;
 import com.example.fullstackserver.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -18,6 +20,7 @@ public class PasswordResetService {
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public void createPasswordResetToken(String email) {
@@ -65,7 +68,7 @@ public class PasswordResetService {
         }
 
         User user = resetToken.getUser();
-        user.setPassword(newPassword); // no encoder if already configured elsewhere
+        user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
         tokenRepository.delete(resetToken); 

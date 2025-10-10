@@ -31,30 +31,25 @@ public class AuthenticationService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Check if account is locked
         if (!user.isAccountNonLocked()) {
             if (unlockWhenTimeExpired(user)) {
-                // unlocked, proceed
+
             } else {
                 return "Your account is locked. Try again later.";
             }
         }
 
-        // Password check
         if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
             increaseFailedAttempts(user);
             return "Invalid credentials";
         }
-
-        // Reset failed attempts on successful login
         resetFailedAttempts(user);
 
-        // Check 2FA
+
         if (Boolean.TRUE.equals(user.getTwoFactorEnabled())) {
             return "2FA enabled. Please verify OTP using /auth/2fa/verify";
         }
 
-        // Generate tokens
         String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 

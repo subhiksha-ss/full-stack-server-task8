@@ -1,8 +1,8 @@
 package com.example.fullstackserver.controller;
 
 import com.example.fullstackserver.entity.User;
-import com.example.fullstackserver.entity.Role;
-import com.example.fullstackserver.repository.UserRepository;
+//import com.example.fullstackserver.entity.Role;
+//import com.example.fullstackserver.repository.UserRepository;
 import com.example.fullstackserver.security.JwtUtil;
 import com.example.fullstackserver.dto.ForgotPasswordRequest;
 import com.example.fullstackserver.dto.LoginRequest;
@@ -10,17 +10,20 @@ import com.example.fullstackserver.dto.RegisterRequest;
 import com.example.fullstackserver.dto.ResetPasswordRequest;
 import com.example.fullstackserver.dto.RefreshTokenRequest;
 import com.example.fullstackserver.dto.RefreshTokenResponse;
+import com.example.fullstackserver.services.AuthenticationService;
 import com.example.fullstackserver.services.PasswordResetService;
 import com.example.fullstackserver.services.RefreshTokenService;
-import com.google.zxing.WriterException;
+//import com.google.zxing.WriterException;
 import com.example.fullstackserver.services.TwoFactorService;
-
+import com.example.fullstackserver.services.UserServices;
 import com.example.fullstackserver.entity.RefreshToken;
 import com.example.fullstackserver.dto.LogoutRequest;
-import java.io.IOException;
+//import java.io.IOException;
+
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
+//import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -28,7 +31,8 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     @Autowired
-    private UserRepository userRepository;
+    private UserServices userServices;
+
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -43,117 +47,44 @@ public class AuthController {
      private TwoFactorService twoFactorService;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private AuthenticationService authenticationService;
+  
 
-
-
-    //login
-   @PostMapping("/login")
+    // Login 
+    @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-    User user = userRepository.findByEmail(loginRequest.getEmail())
-            .orElseThrow(() -> new RuntimeException("User not found"));
+        Object response = authenticationService.login(
+                loginRequest.getEmail(),
+                loginRequest.getPassword()
+        );
 
-    if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-        return ResponseEntity.status(401).body("Invalid password");
+        if (response instanceof String) {
+            return ResponseEntity.badRequest().body(response);
+        }
+        return ResponseEntity.ok(response);
     }
 
-    if (Boolean.TRUE.equals(user.getTwoFactorEnabled())) {
-        return ResponseEntity.ok("2FA enabled. Please verify OTP using /auth/2fa/verify");
-    }
-    // login without 2fa enable
-    String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
-    RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId()); 
-
-    return ResponseEntity.ok(new RefreshTokenResponse(accessToken, refreshToken.getToken(), "Bearer"));
-}
-
-
-    // QR code generation and 2FA enable
-    @PostMapping("/2fa/enable/qrcode")
-    public ResponseEntity<?> enable2FA(@RequestParam String email) throws WriterException, IOException {
-    User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-
-    if (Boolean.TRUE.equals(user.getTwoFactorEnabled())) {
-        return ResponseEntity.badRequest().body("2FA already enabled");
+    @PostMapping("/2fa/enable")
+    public ResponseEntity<?> enable2FA(@RequestParam String email) {
+        return ResponseEntity.ok(twoFactorService.enable2FA(email));
     }
 
-    String secret = twoFactorService.generateSecretKey();
-    user.setTwoFactorSecret(secret);
-    user.setTwoFactorEnabled(true);
-    userRepository.save(user);
-
-    String otpAuthURL = String.format(
-            "otpauth://totp/Auth:%s?secret=%s&issuer=Auth",
-            user.getEmail(), secret
-    );
-
-    String qrBase64 = twoFactorService.generateQRCode(otpAuthURL);
-    return ResponseEntity.ok(qrBase64);
-}
-
-// otp verification during login
     @PostMapping("/2fa/verify")
     public ResponseEntity<?> verify2FA(@RequestParam String email, @RequestParam int code) {
-    User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-
-    if (!user.getTwoFactorEnabled()) {
-        return ResponseEntity.badRequest().body("2FA not enabled for this user");
+        return ResponseEntity.ok(twoFactorService.verify2FA(email, code));
     }
 
-    boolean isValid = twoFactorService.verifyCode(user.getTwoFactorSecret(), code);
-    if (!isValid) {
-        return ResponseEntity.status(401).body("Invalid OTP");
-    }
-
-    String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
-    RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
-    return ResponseEntity.ok(new RefreshTokenResponse(accessToken, refreshToken.getToken(), "Bearer"));
-}
-
-
-  // disable 2fa
-    @PostMapping("/2fa/disable")
+    @PostMapping("/disable")
     public ResponseEntity<?> disable2FA(@RequestParam String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        if (!Boolean.TRUE.equals(user.getTwoFactorEnabled())) {
-            return ResponseEntity.badRequest().body("2FA is not enabled for this user");
-        }
-
-        user.setTwoFactorEnabled(false);
-        user.setTwoFactorSecret(null);
-        userRepository.save(user);
-
-        return ResponseEntity.ok("2FA has been disabled successfully");
+        return ResponseEntity.ok(twoFactorService.disable2FA(email));
     }
    
-
-    // register 
-    @PostMapping("/register")
+    // Register
+   @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
-
-    if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
-        return ResponseEntity.badRequest().body("Email already registered");
+        userServices.registerUser(registerRequest);
+        return ResponseEntity.ok("User registered successfully!");
     }
-
-    User user = new User();
-    user.setFirstName(registerRequest.getFirstName());
-    user.setLastName(registerRequest.getLastName());
-    user.setEmail(registerRequest.getEmail());
-    user.setPassword(passwordEncoder.encode(registerRequest.getPassword())); 
-    user.setDob(registerRequest.getDob());
-    user.setGender(registerRequest.getGender());
-    user.setPhoneNumber(registerRequest.getPhoneNumber());
-    user.setRole(Role.valueOf(registerRequest.getRole().toUpperCase()));
-    user.setProvider("manual");  // important for distinguishing from OAuth users
-
-    userRepository.save(user);
-
-    return ResponseEntity.ok("User registered successfully!");
-}
 
 
     //refresh token

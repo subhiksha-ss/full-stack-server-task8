@@ -1,8 +1,10 @@
 package com.example.fullstackserver.services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 // import com.example.fullstackserver.services.CloudinaryService;
 import com.example.fullstackserver.repository.UserRepository;
+import com.example.fullstackserver.dto.RegisterRequest;
 import com.example.fullstackserver.entity.User;
 
 
@@ -13,14 +15,25 @@ public class UserServices {
 
     @Autowired
     private UserRepository userRepository;
-    
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
-    // create user -> register
+    public void registerUser(RegisterRequest registerRequest) {
+        if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already registered");
+        }
 
-    public User createUser(User user){
-
-        return userRepository.save(user);
+        User user = new User();
+        user.setFirstName(registerRequest.getFirstName());
+        user.setLastName(registerRequest.getLastName());
+        user.setEmail(registerRequest.getEmail());
+        user.setPassword(passwordEncoder.encode(registerRequest.getPassword())); 
+        user.setDob(registerRequest.getDob());
+        user.setGender(registerRequest.getGender());
+        user.setPhoneNumber(registerRequest.getPhoneNumber());
+        user.setProvider("manual"); 
+        userRepository.save(user);
     }
 
     // get all user
@@ -82,4 +95,5 @@ public class UserServices {
 }
 
     
+
 }

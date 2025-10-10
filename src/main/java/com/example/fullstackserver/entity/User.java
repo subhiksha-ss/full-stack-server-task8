@@ -10,6 +10,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import jakarta.persistence.EnumType;
 
 @Entity
@@ -40,5 +42,13 @@ public class User {
     private String twoFactorSecret;
     private Boolean twoFactorEnabled = false; 
 
+    @Column(nullable = false)
+    private boolean accountNonLocked = true;
+
+    @Column(nullable = false)
+    private int failedLoginAttempts = 0;
+
+    private LocalDateTime lockTime;
 }
-    
+
+

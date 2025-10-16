@@ -1,7 +1,6 @@
 package com.example.fullstackserver.entity;
 
-public enum Role {
-
+public enum Role { 
     USER,
     ADMIN
 

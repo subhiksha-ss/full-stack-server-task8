@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+//import com.example.fullstackserver.services.RateLimitService;
 
 
 @Service
@@ -25,6 +26,9 @@ public class AuthenticationService {
 
     @Autowired
     private RefreshTokenService refreshTokenService;
+
+    //@Autowired
+   //private RateLimitService rateLimitService;
 
     public Object login(String email, String rawPassword) {
 

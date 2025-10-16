@@ -144,16 +144,6 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
-<!-- Rate Limiting (Bucket4j) -->
-<!-- Bucket4j for rate limiting -->
-<dependency>
-    <groupId>com.bucket4j</groupId>
-    <artifactId>bucket4j-core</artifactId>
-    <version>8.10.1</version>
-</dependency>
-
-
-
 
 
     </dependencies>

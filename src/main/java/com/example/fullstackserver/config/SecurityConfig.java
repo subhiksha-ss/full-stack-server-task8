@@ -1,6 +1,8 @@
 package com.example.fullstackserver.config;
 
 import com.example.fullstackserver.security.JwtFilter;
+import com.example.fullstackserver.security.RateLimitFilter;
+//import com.example.fullstackserver.security.LoginRateLimitingSuccessHandler;
 import com.example.fullstackserver.services.OAuth2UserService;
 import com.example.fullstackserver.services.OAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.http.HttpStatus;
+//import com.example.fullstackserver.security.RateLimitFilter;
 
 @Configuration
 @EnableMethodSecurity(prePostEnabled = true)
@@ -26,7 +29,8 @@ public class SecurityConfig {
     private final JwtFilter jwtFilter;
     private final OAuth2UserService customOAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-
+        private final RateLimitFilter rateLimitFilter;
+    //private final LoginRateLimitFilter loginRateLimitFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -49,8 +53,10 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2LoginSuccessHandler)
                 )
-                
+               
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(rateLimitFilter, JwtFilter.class)
+
                 .build();
     }
 

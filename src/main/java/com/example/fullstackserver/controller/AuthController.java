@@ -16,15 +16,21 @@ import com.example.fullstackserver.services.RefreshTokenService;
 //import com.google.zxing.WriterException;
 import com.example.fullstackserver.services.TwoFactorService;
 import com.example.fullstackserver.services.UserServices;
+import com.example.fullstackserver.services.TokenBlacklistService;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import com.example.fullstackserver.entity.RefreshToken;
 import com.example.fullstackserver.dto.LogoutRequest;
+import com.example.fullstackserver.services.RateLimitService;
 //import java.io.IOException;
-
+import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 //import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
 
 @RestController
 @RequestMapping("/auth")
@@ -48,11 +54,23 @@ public class AuthController {
 
     @Autowired
     private AuthenticationService authenticationService;
+
+    @Autowired
+    private RateLimitService rateLimitService;
+
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
   
 
     // Login 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+         String email = loginRequest.getEmail();
+
+    boolean allowed = rateLimitService.isAllowed(email, 5, 2 * 60 * 1000);
+    if (!allowed) {
+        return ResponseEntity.status(429).body("Too many login attempts for this user. Try again later.");
+    }
         Object response = authenticationService.login(
                 loginRequest.getEmail(),
                 loginRequest.getPassword()
@@ -74,7 +92,7 @@ public class AuthController {
         return ResponseEntity.ok(twoFactorService.verify2FA(email, code));
     }
 
-    @PostMapping("/disable")
+    @PostMapping("/2fa/disable")
     public ResponseEntity<?> disable2FA(@RequestParam String email) {
         return ResponseEntity.ok(twoFactorService.disable2FA(email));
     }
@@ -118,18 +136,25 @@ public class AuthController {
 }
 
     // logout
-     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@RequestBody LogoutRequest logoutRequest) {
+    @PostMapping("/logout")
+public ResponseEntity<?> logout(HttpServletRequest request, @RequestBody LogoutRequest logoutRequest) {
+    // 1. Delete refresh token
     String refreshTokenStr = logoutRequest.getRefreshToken();
-
-
     RefreshToken refreshToken = refreshTokenService.findByToken(refreshTokenStr)
             .orElseThrow(() -> new RuntimeException("Refresh token not found"));
 
-
     refreshTokenService.deleteByUserId(refreshToken.getUser().getId());
 
-    return ResponseEntity.ok("Logout successful. Refresh token deleted.");  
+    // 2. Blacklist access token
+    String authHeader = request.getHeader("Authorization");
+    if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        String accessToken = authHeader.substring(7);
+        LocalDateTime expiry = jwtUtil.getExpiryDate(accessToken); // you need a method in JwtUtil to parse expiry
+        tokenBlacklistService.blacklistToken(accessToken, expiry);
     }
+
+    return ResponseEntity.ok("Logout successful. Refresh token deleted and access token blacklisted.");
+}
+
 }
 

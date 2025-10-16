@@ -29,22 +29,30 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
 
         String provider = request.getClientRegistration().getRegistrationId(); // used to get provider google/github
         final String email;
+        final String firstName;
+        final String lastName;
 
         if ("google".equals(provider)) {
             email = oAuth2User.getAttribute("email");
+            firstName = oAuth2User.getAttribute("given_name");
+            lastName = oAuth2User.getAttribute("family_name");
         } else if ("github".equals(provider)) {
             String githubEmail = oAuth2User.getAttribute("email");
             if (githubEmail == null) {
                 githubEmail = oAuth2User.getAttribute("login") + "@github.com";
             }
             email = githubEmail;
+            firstName = oAuth2User.getAttribute("name") != null ? oAuth2User.getAttribute("name") : oAuth2User.getAttribute("login");
+            lastName = "";
         } else {
             throw new OAuth2AuthenticationException("Unsupported provider: " + provider);
         }
 
-        User user = userRepository.findByEmail(email).orElseGet(() -> {
+    User user = userRepository.findByEmail(email).orElseGet(() -> {
     User newUser = new User();
     newUser.setEmail(email);
+    newUser.setFirstName(firstName); 
+    newUser.setLastName(lastName);
     newUser.setProvider(provider);  
     newUser.setRole(Role.USER);
     return userRepository.save(newUser);
@@ -56,9 +64,6 @@ if (user.getProvider() != null && !user.getProvider().equals(provider) && !"manu
         "Please use your " + user.getProvider() + " account to login."
     );
 }
-
-
-
         Map<String, Object> attributes = new HashMap<>(oAuth2User.getAttributes());
         attributes.put("userId", user.getId());
 

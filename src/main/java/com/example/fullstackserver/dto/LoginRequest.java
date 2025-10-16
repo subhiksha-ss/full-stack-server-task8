@@ -1,14 +1,9 @@
 package com.example.fullstackserver.dto;
 
-import lombok.Setter;
-import lombok.Getter;
+import lombok.Data;
 
-@Getter
-@Setter 
-
+@Data
 public class LoginRequest {
-
     private String email;
     private String password;
-    
 }

@@ -6,6 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.example.fullstackserver.repository.UserRepository;
 import com.example.fullstackserver.dto.RegisterRequest;
 import com.example.fullstackserver.entity.User;
+import com.example.fullstackserver.entity.Role;
 
 
 import java.util.List;
@@ -33,6 +34,7 @@ public class UserServices {
         user.setGender(registerRequest.getGender());
         user.setPhoneNumber(registerRequest.getPhoneNumber());
         user.setProvider("manual"); 
+        user.setRole(Role.USER);
         userRepository.save(user);
     }
 

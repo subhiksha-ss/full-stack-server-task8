@@ -46,7 +46,7 @@ public class TwoFactorService {
                 user.getEmail(), secret
         );
 
-        return generateQRCode(otpAuthURL); // returns base64 image
+        return generateQRCode(otpAuthURL); 
     }
 
     public Object verify2FA(String email, int code) {
